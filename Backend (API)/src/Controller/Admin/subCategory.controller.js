@@ -1,4 +1,5 @@
 const subCategoryModal = require("../../Models/subCategory");
+const categoryModal = require("../../Models/category");
 const env = require('dotenv').config();
 var slugify = require('slugify');
 
@@ -17,42 +18,25 @@ const generateUniqueSlug = async (Model, baseSlug) => {
 
 exports.viewCategory = async (request, response) => {
 
-    //Parameter till now {name ,page, limit}
-
-    var current_page = 1;
-    var total_pages = 0;
-    var total_records = 0
-    var limit = 10
-    var skip = 0
-
-    if (request.body) {
-        if (request.body.limit != '' && request.body.limit != undefined && request.body.limit > 0) {
-            limit = parseInt(request.body.limit);
-        }
-
-        if (request.body.page != '' && request.body.page != undefined && request.body.page > 0) {
-            skip = (request.body.page - 1) * limit;
-            current_page = parseInt(request.body.page);
-        }
-    }
-
-
     try {
 
         const addCondition = [
             {
                 deleted_at: null,
-                name: { $exists: true }
+
             }
         ];
 
-        const orCondition = [];
+        const orCondition = [
+            {
+                status: true,
+            }
+        ];
 
         if (request.body) {
-            if (request.body.name != undefined) {
-                if (request.body.name != '') {
-                    var name = new RegExp(request.body.name, "i")
-                    addCondition.push({ name: name })
+            if (request.body.id != undefined) {
+                if (request.body.id != '') {
+                    orCondition.push({ _id: request.body.id })
                 }
             }
         }
@@ -68,22 +52,13 @@ exports.viewCategory = async (request, response) => {
             filter.$or = orCondition;
         }
 
-        total_records = await categoryModal.find(filter).countDocuments()
-
-        await categoryModal.find(filter).select("name image status order").skip(skip).limit(limit).sort({ _id: "desc" }) //For Website this would be .sort({order: "asc", _id: "desc"})
+        await categoryModal.find(filter).select("name image status order").sort({ _id: "desc" }) //For Website this would be .sort({order: "asc", _id: "desc"})
             .then((result) => {
                 if (result.length > 0) {
-                    var paginate = {
-                        current_page: current_page,
-                        total_pages: Math.ceil(total_records / limit),
-                        total_records: total_records
-                    }
 
                     const data = {
                         status: true,
                         message: "Record Found Successfully",
-                        paginate: paginate,
-                        image_path: process.env.category_image_path,
                         data: result
                     }
                     response.send(data);
@@ -132,7 +107,7 @@ exports.create = async (request, response) => {
             strict: true
         });
 
-        data.slug = await generateUniqueSlug(categoryModal, slug);
+        data.slug = await generateUniqueSlug(subCategoryModal, slug);
     }
 
     if (request.file) {
@@ -141,7 +116,7 @@ exports.create = async (request, response) => {
 
     try {
 
-        var saveData = new categoryModal(data).save()
+        var saveData = new subCategoryModal(data).save()
             .then((result) => {
                 const data = {
                     status: true,
@@ -204,7 +179,6 @@ exports.view = async (request, response) => {
         const addCondition = [
             {
                 deleted_at: null,
-                name: { $exists: true }
             }
         ];
 
@@ -215,6 +189,11 @@ exports.view = async (request, response) => {
                 if (request.body.name != '') {
                     var name = new RegExp(request.body.name, "i")
                     addCondition.push({ name: name })
+                }
+            }
+            if (request.body.parent_category != undefined) {
+                if (request.body.parent_category != '') {
+                    addCondition.push({ parent_category: request.body.parent_category })
                 }
             }
         }
@@ -230,9 +209,9 @@ exports.view = async (request, response) => {
             filter.$or = orCondition;
         }
 
-        total_records = await categoryModal.find(filter).countDocuments()
+        total_records = await subCategoryModal.find(filter).countDocuments()
 
-        await categoryModal.find(filter).select("name image status order").skip(skip).limit(limit).sort({ _id: "desc" }) //For Website this would be .sort({order: "asc", _id: "desc"})
+        await subCategoryModal.find(filter).select("name parent_category image status order").skip(skip).limit(limit).sort({ _id: "desc" }).populate('parent_category', 'name') //For Website this would be .sort({order: "asc", _id: "desc"})
             .then((result) => {
                 if (result.length > 0) {
                     var paginate = {
@@ -285,7 +264,7 @@ exports.view = async (request, response) => {
 exports.details = async (request, response) => {
     try {
 
-        await categoryModal.findById(request.params.id)
+        await subCategoryModal.findById(request.params.id)
             .then((result) => {
                 if (result) {
 
@@ -341,7 +320,7 @@ exports.update = async (request, response) => {
                 strict: true
             });
 
-            data.slug = await generateUniqueSlug(categoryModal, slug);
+            data.slug = await generateUniqueSlug(subCategoryModal, slug);
         }
 
         if (request.file != undefined) {
@@ -350,7 +329,7 @@ exports.update = async (request, response) => {
             }
         }
 
-        var saveData = await categoryModal.updateOne({
+        var saveData = await subCategoryModal.updateOne({
             _id: request.params.id
         }, {
             $set: data
@@ -408,7 +387,7 @@ exports.destroy = async (request, response) => {
             deleted_at: Date.now()
         }
 
-        var saveData = await categoryModal.updateMany({
+        var saveData = await subCategoryModal.updateMany({
             _id: request.body.ids
         }, {
             $set: data
@@ -462,7 +441,7 @@ exports.destroy = async (request, response) => {
 exports.changeStatus = async (request, response) => {
     try {
 
-        var saveData = await categoryModal.updateMany({
+        var saveData = await subCategoryModal.updateMany({
             _id: request.body.ids
         }, [{
             $set: {
