@@ -4,40 +4,122 @@ import "dropify/dist/css/dropify.min.css";
 import "dropify/dist/js/dropify.min.js";
 import Breadcrumb from "../../common/Breadcrumb";
 import { useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function AddSubCategory() {
-  useEffect(() => {
-    $(".dropify").dropify({
-      messages: {
-        default: "Drag and drop ",
-        replace: "Drag and drop ",
-        remove: "Remove",
-        error: "Oops, something went wrong"
-      }
-    });
-  }, []);
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
 
-  const onSubmit = (data) => {
-    
-  };
-  // update work
-  const [updateIdState, setUpdateIdState] = useState(false)
-  let updateId = useParams().id
+  const [categories, setCategories] = useState([]);
+  const [imageURL, setImageUrl] = useState('');
+  const [updateIdState, setUpdateIdState] = useState(false);
+  const [subCategoryDetails, setSubCategoryDetails] = useState('')
+  const [parentCategoryId, setParentCategoryId] = useState('')
+  const params = useParams();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    if (updateId == undefined) {
-      setUpdateIdState(false)
+    axios.post(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_SUB_CATEGORY_URL}view-category`,{
+      id : parentCategoryId,
+    })
+      .then((result) => {
+        if (result.data.status == true) {
+          setCategories(result.data.data)
+        } else {
+          setCategories([]);
+        }
+      })
+      .catch(() => {
+        toast.error("Something went wrong!!")
+        setTotalPages(1);
+      })
+  }, [parentCategoryId]);
+
+  useEffect(() => {
+    const dropifyElement = $("#image");
+
+    if (dropifyElement.data("dropify")) {
+      dropifyElement.data("dropify").destroy();
+      dropifyElement.removeData("dropify");
     }
-    else {
-      setUpdateIdState(true)
+
+    // **Force Update Dropify Input**
+    dropifyElement.replaceWith(
+      `<input type="file" accept="image/*" name="image" id="image"
+          class="dropify" data-height="250" data-default-file="${imageURL}"/>`
+    );
+
+    // **Reinitialize Dropify**
+    $("#image").dropify();
+
+  }, [imageURL]); // ✅ Runs when `defaultImage` updates
+
+  useEffect(() => {
+    if (params.id != '' && params.id != undefined) {
+      setUpdateIdState(params.id);
+
+      axios.post(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_SUB_CATEGORY_URL}details/${params.id}`)
+        .then((result) => {
+          if (result.data.status == true) {
+            setSubCategoryDetails(result.data.data);
+            setParentCategoryId(result.data.data.parent_category)
+            if (result.data.data.image != '') {
+              setImageUrl(`${result.data.image_path}${result.data.data.image}`)
+            }
+          } else {
+            setSubCategoryDetails('');
+          }
+        })
+        .catch(() => {
+          toast.error("Something went wrong!!")
+        });
     }
-  }, [updateId])
+  }, [params])
+
+  const formHandler = (event) => {
+    event.preventDefault();
+
+    if (!updateIdState) {
+      //Add Sub Category
+
+      axios.post(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_SUB_CATEGORY_URL}create`, event.target)
+        .then((result) => {
+          if (result.data.status == true) {
+
+            toast.success(result.data.message);
+            event.target.reset();
+            navigate("/category/sub-category/view");
+          }
+          else {
+            toast.error(result.data.message);
+          }
+        })
+        .catch(() => {
+          toast.error("Something went wrong!!");
+        })
+
+    } else {
+      //Update Sub Category
+
+      axios.put(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_SUB_CATEGORY_URL}update/${params.id}`, event.target)
+        .then((result) => {
+          if (result.data.status == true) {
+            toast.success(result.data.message);
+            event.target.reset();
+            navigate("/category/sub-category/view");
+          }
+          else {
+            toast.error(result.data.message);
+          }
+        })
+        .catch(() => {
+          toast.error("Something went wrong!!");
+        })
+    }
+  }
+
+  console.log(categories)
+  console.log(parentCategoryId)
 
   return (
     <section className="w-full">
@@ -45,9 +127,9 @@ export default function AddSubCategory() {
       <div className="w-full min-h-[610px]">
         <div className="max-w-[1220px] mx-auto py-5">
           <h3 className="text-[26px] font-semibold bg-slate-100 py-3 px-4 rounded-t-md border border-slate-400">
-            Add Sub Category
+            {updateIdState ? "Update Sub Category" : "Add Sub Category"}
           </h3>
-          <form onSubmit={handleSubmit(onSubmit)} autoComplete="off" className="border border-t-0 p-3 rounded-b-md border-slate-400">
+          <form onSubmit={formHandler} autoComplete="off" className="border border-t-0 p-3 rounded-b-md border-slate-400">
             <div className="flex gap-5">
               <div className="w-1/3">
                 <label
@@ -59,28 +141,31 @@ export default function AddSubCategory() {
                 <input
                   type="file"
                   accept="image/*"
-                  {...register("categoryImage", { required: "Category image is required" })}
-                  id="categoryImage"
+                  name="image"
+                  id="image"
                   className="dropify"
                   data-height="230"
                 />
-                {errors.categoryImage && <p className="text-red-500">{errors.categoryImage.message}</p>}
               </div>
 
               <div className="w-2/3">
-              {/* Parent Category Dropdown */}
-              <div className="mb-5">
+                {/* Parent Category Dropdown */}
+                <div className="mb-5">
                   <label className="block  text-md font-medium text-gray-900">
                     Parent Category Name
                   </label>
                   <select
-                    name="parentCatSelectBox"
+                    name="parent_category"
                     className="border-2 border-gray-300 text-gray-900 mb-6 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
                   >
                     <option value="">Select Category</option>
-                    <option value="Mens">Men's</option>
-                    <option value="Women">Women</option>
-                    <option value="Sale">Sale</option>
+                    {
+                      categories.map((v, i) => {
+                        return (
+                          <option key={i} selected={v._id == subCategoryDetails.parent_category ? "selected" : ""} value={v._id}>{v.name}</option>
+                        )
+                      })
+                    }
                   </select>
                 </div>
 
@@ -93,12 +178,12 @@ export default function AddSubCategory() {
                   </label>
                   <input
                     type="text"
-                    {...register("categoryName", { required: "Category name is required" })}
                     id="categoryName"
+                    defaultValue={subCategoryDetails.name}
+                    name="name"
                     className="text-[19px] border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5 px-3"
                     placeholder="Category Name"
                   />
-                  {errors.categoryName && <p className="text-red-500">{errors.categoryName.message}</p>}
                 </div>
 
                 <div className="mb-5">
@@ -110,14 +195,14 @@ export default function AddSubCategory() {
                   </label>
                   <input
                     type="text"
-                    {...register("Order", { required: "Category Order is required" })}
-                    id="categoryName"
+                    id="categoryOrder"
+                    defaultValue={subCategoryDetails.order}
+                    name="order"
                     className="text-[19px] border-2 shadow-sm border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5 px-3"
                     placeholder="Category Order"
                   />
-                  {errors.Order && <p className="text-red-500">{errors.Order.message}</p>}
                 </div>
-                
+
               </div>
 
 

@@ -320,7 +320,7 @@ export default function ViewCategory() {
                               <div className="text-base font-semibold">No Record Found!!</div>
                             </div>
                           </th>
-                        </tr>
+                        </tr> 
                     }
                   </tbody>
                 </table>
