@@ -68,10 +68,12 @@ export default function ViewCategory() {
   }
 
   const filterName = (e) => {
+    setCurrentPage(1);
     setSearchName(e.target.value);
   }
 
   const filterCategory = (e) => {
+    setCurrentPage(1);  
     setSearchCategory(e.target.value)
   }
 

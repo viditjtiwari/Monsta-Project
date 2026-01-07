@@ -34,6 +34,7 @@ require('./src/Routes/Admin/whychooseus.routes.js')(server);
 require('./src/Routes/Admin/testimonial.routes.js')(server);
 require('./src/Routes/Admin/faq.routes.js')(server);
 require('./src/Routes/Admin/subCategory.routes.js')(server);
+require('./src/Routes/Admin/subSubCategory.routes.js')(server);
 
 mongoose.connect(`mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster.h2penvi.mongodb.net/Monsta?appName=Cluster`)
     .then(() => console.log('Connected!'))
