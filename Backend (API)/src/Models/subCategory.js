@@ -18,6 +18,10 @@ const subCategorySchema = new mongoose.Schema({
         ref : 'categories',
         default : '',
     },
+    sub_sub_categories : {
+        type : Array,
+        default : [],
+    },
     status : {
         type: Boolean, //0 - inactive, 1 - active
         default: 1

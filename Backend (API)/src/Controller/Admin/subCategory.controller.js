@@ -211,7 +211,7 @@ exports.view = async (request, response) => {
 
         total_records = await subCategoryModal.find(filter).countDocuments()
 
-        await subCategoryModal.find(filter).select("name parent_category image status order").skip(skip).limit(limit).sort({ _id: "desc" }).populate('parent_category', 'name') //For Website this would be .sort({order: "asc", _id: "desc"})
+        await subCategoryModal.find(filter).select("name parent_category sub_category image status order").skip(skip).limit(limit).sort({ _id: "desc" }).populate('parent_category', 'name') //For Website this would be .sort({order: "asc", _id: "desc"})
             .then((result) => {
                 if (result.length > 0) {
                     var paginate = {

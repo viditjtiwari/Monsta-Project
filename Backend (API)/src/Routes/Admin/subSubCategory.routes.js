@@ -36,5 +36,5 @@ module.exports = (server) => {
 
     router.put('/delete', upload.none(), destroy);
 
-    server.use('/api/admin/sub-category', router);
+    server.use('/api/admin/sub-sub-category', router);
 }

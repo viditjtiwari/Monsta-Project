@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const subCategorySchema = new mongoose.Schema({
+const subSubCategorySchema = new mongoose.Schema({
     name : {
         type: String,
         required: [true, "Name is required"],
@@ -16,6 +16,11 @@ const subCategorySchema = new mongoose.Schema({
     parent_category : {
         type : Object,
         ref : 'categories',
+        default : '',
+    },
+    sub_category : {
+        type : Object,
+        ref : 'sub_categories',
         default : '',
     },
     status : {
@@ -42,6 +47,6 @@ const subCategorySchema = new mongoose.Schema({
     }
 });
 
-const subCategoryModal = mongoose.model('sub_categories', subCategorySchema);
+const subSubCategoryModal = mongoose.model('sub_sub_categories', subSubCategorySchema);
 
-module.exports = subCategoryModal;
+module.exports = subSubCategoryModal;
